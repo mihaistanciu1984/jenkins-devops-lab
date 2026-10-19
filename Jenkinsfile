@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Start') {
             steps {
-                echo 'Jenkins a pornit primul meu pipeline.'
+                echo 'Jenkins a pornit pipeline-ul.'
             }
         }
 
@@ -15,9 +15,16 @@ pipeline {
             }
         }
 
-        stage('Final') {
+        stage('Build Docker image') {
             steps {
-                echo 'Pipeline-ul s-a terminat cu succes.'
+                sh 'docker build -t jenkins-devops-lab:${BUILD_NUMBER} .'
+            }
+        }
+
+        stage('Verify Docker image') {
+            steps {
+                sh 'docker image inspect jenkins-devops-lab:${BUILD_NUMBER} > /dev/null'
+                echo 'Imaginea Docker a fost construita si verificata.'
             }
         }
     }
