@@ -21,11 +21,22 @@ pipeline {
             }
         }
 
-        stage('Verify Docker image') {
+        stage('Parallel validation') {
+    parallel {
+        stage('Inspect image') {
             steps {
                 sh 'docker image inspect jenkins-devops-lab:${BUILD_NUMBER} > /dev/null'
-                echo 'Imaginea Docker a fost construita si verificata.'
+                echo 'Imaginea exista.'
+            }
+        }
+
+        stage('Check HTML in image') {
+            steps {
+                sh 'docker run --rm --entrypoint cat jenkins-devops-lab:${BUILD_NUMBER} /usr/share/nginx/html/index.html | grep -q "Jenkins Docker Lab"'
+                echo 'Fisierul HTML este inclus in imagine.'
             }
         }
     }
 }
+        }
+    }
