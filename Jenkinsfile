@@ -1,3 +1,5 @@
+
+@Library('devops-shared') _
 pipeline {
     agent any
 
@@ -54,7 +56,11 @@ pipeline {
                             sh 'docker build --build-arg NGINX_TAG=${NGINX_TAG} -t jenkins-devops-lab:${NGINX_TAG}-${BUILD_NUMBER} .'
                         }
                     }
-
+                    stage('Shared Library') {
+                        steps {
+                            sayHello('jenkins-devops-lab')
+                       }
+                    }
                     stage('Check HTML') {
                         steps {
                             sh 'docker run --rm --entrypoint cat jenkins-devops-lab:${NGINX_TAG}-${BUILD_NUMBER} /usr/share/nginx/html/index.html | grep -q "Jenkins Docker Lab"'
