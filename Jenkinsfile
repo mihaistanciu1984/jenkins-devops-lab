@@ -32,15 +32,18 @@ pipeline {
                     }
                 }
 
-                stage('Check HTML in image') {
-                    steps {
-                        sh 'docker run --rm --entrypoint cat jenkins-devops-lab:${BUILD_NUMBER} /usr/share/nginx/html/index.html | grep -q "Jenkins Docker Lab"'
-                        echo 'Fisierul HTML este inclus in imagine.'
+        stage('Check HTML in image') {
+            steps {
+                sh 'docker run --rm --entrypoint cat jenkins-devops-lab:${BUILD_NUMBER} /usr/share/nginx/html/index.html | grep -q "Jenkins Docker Lab"'
+                echo 'Fisierul HTML este inclus in imagine.'
                     }
                 }
             }
         }
-
+        stage('Shared Library') {
+            steps {
+                sayHello('jenkins-devops-lab')
+                       }
         stage('Matrix build and test') {
             matrix {
                 axes {
@@ -50,7 +53,7 @@ pipeline {
                     }
                 }
 
-                stages {
+               stages {
                     stage('Build image variant') {
                         steps {
                             sh 'docker build --build-arg NGINX_TAG=${NGINX_TAG} -t jenkins-devops-lab:${NGINX_TAG}-${BUILD_NUMBER} .'
@@ -58,15 +61,12 @@ pipeline {
                     }
                   
                     }
-                    stage('Check HTML') {
-                        steps {
+                stage('Check HTML') {
+                    steps {
                             sh 'docker run --rm --entrypoint cat jenkins-devops-lab:${NGINX_TAG}-${BUILD_NUMBER} /usr/share/nginx/html/index.html | grep -q "Jenkins Docker Lab"'
                         }
                     }
-                    stage('Shared Library') {
-                        steps {
-                            sayHello('jenkins-devops-lab')
-                       }
+                    
                 }
             }
         }
