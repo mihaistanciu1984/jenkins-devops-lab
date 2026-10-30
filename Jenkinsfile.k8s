@@ -54,7 +54,42 @@ pipeline {
 
 
 
-        stage('Validate manifests') {
+         stage('Publish image to Docker Hub') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKERHUB_USER',
+                        passwordVariable: 'DOCKERHUB_TOKEN'
+                    )
+                ]) {
+                    sh '''
+                        set +x
+                        set -eu
+
+                        export DOCKER_CONFIG="$(mktemp -d)"
+                        trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+
+                        printf '%s' "$DOCKERHUB_TOKEN" |
+                            docker login \
+                                --username "$DOCKERHUB_USER" \
+                                --password-stdin
+
+                        docker tag \
+                            "devops-web:${BUILD_NUMBER}" \
+                            "mihaistanciu1984/devops-web:${BUILD_NUMBER}"
+
+                        docker push \
+                            "mihaistanciu1984/devops-web:${BUILD_NUMBER}"
+
+                        docker logout
+                    '''
+                }
+            }
+        }
+
+
+          stage('Validate manifests') {
             steps {
                 withCredentials([
                     file(
