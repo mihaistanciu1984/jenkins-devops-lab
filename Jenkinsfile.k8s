@@ -1,0 +1,79 @@
+pipeline {
+    agent any
+
+    options {
+        timeout(time: 5, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        APP_URL = 'http://192.168.1.49:31805'
+    }
+
+    stages {
+        stage('Check tools') {
+            steps {
+                sh '/usr/local/bin/kubectl version --client'
+            }
+        }
+
+        stage('Validate manifests') {
+            steps {
+                withCredentials([
+                    file(
+                        credentialsId: 'k3s-devops-lab',
+                        variable: 'KUBECONFIG'
+                    )
+                ]) {
+                    sh '''
+                        set +x
+                        /usr/local/bin/kubectl apply \
+                            --dry-run=server \
+                            --request-timeout=30s \
+                            -f k8s/nginx-lab.yaml
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                withCredentials([
+                    file(
+                        credentialsId: 'k3s-devops-lab',
+                        variable: 'KUBECONFIG'
+                    )
+                ]) {
+                    sh '''
+                        set +x
+                        set -e
+                        /usr/local/bin/kubectl apply \
+                            --request-timeout=30s \
+                            -f k8s/nginx-lab.yaml
+
+                        /usr/local/bin/kubectl rollout status \
+                            deployment/nginx-lab \
+                            --namespace=devops-lab \
+                            --timeout=180s
+                    '''
+                }
+            }
+        }
+
+        stage('HTTP smoke test') {
+            steps {
+                sh '''
+                    set -eu
+                    curl --fail --silent --show-error \
+                        --connect-timeout 5 \
+                        --max-time 15 \
+                        "$APP_URL" \
+                        -o nginx-response.html
+
+                    grep -q 'Welcome to nginx!' nginx-response.html
+                '''
+                echo 'Deployment verificat prin HTTP.'
+            }
+        }
+    }
+}
