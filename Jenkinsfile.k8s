@@ -89,6 +89,39 @@ pipeline {
         }
 
 
+
+        stage('Generate deployment manifests') {
+            steps {
+                sh 'mkdir -p build/deploy'
+
+                writeFile(
+                    file: 'build/deploy/kustomization.yaml',
+                    text: """
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../k8s
+
+images:
+  - name: mihaistanciu1984/devops-web
+    newTag: "${env.BUILD_NUMBER}"
+"""
+                )
+
+                sh '''
+                    set -eu
+                    /usr/local/bin/kubectl kustomize build/deploy/ \
+                        > build/rendered-manifests.yaml
+                '''
+
+                archiveArtifacts(
+                    artifacts: 'build/rendered-manifests.yaml',
+                    fingerprint: true
+                )
+            }
+        }
+
           stage('Validate manifests') {
             steps {
                 withCredentials([
@@ -102,7 +135,7 @@ pipeline {
                         /usr/local/bin/kubectl apply \
                             --dry-run=server \
                             --request-timeout=30s \
-                            -k k8s/
+                            --f build/rendered-manifests.yaml
                     '''
                 }
             }
@@ -121,7 +154,7 @@ pipeline {
                         set -e
                         /usr/local/bin/kubectl apply \
                             --request-timeout=30s \
-                            -k k8s/
+                            --f build/rendered-manifests.yaml
 
                         /usr/local/bin/kubectl rollout status \
                             deployment/nginx-lab \

@@ -5,8 +5,3 @@ namespace: devops-lab
 
 resources:
   - nginx-lab.yaml
-
-configMapGenerator:
-  - name: nginx-html
-    files:
-      - index.html
