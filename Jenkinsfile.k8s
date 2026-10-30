@@ -30,7 +30,7 @@ pipeline {
                         /usr/local/bin/kubectl apply \
                             --dry-run=server \
                             --request-timeout=30s \
-                            -f k8s/nginx-lab.yaml
+                            -f k8s/
                     '''
                 }
             }
@@ -49,7 +49,7 @@ pipeline {
                         set -e
                         /usr/local/bin/kubectl apply \
                             --request-timeout=30s \
-                            -f k8s/nginx-lab.yaml
+                            -f k8s/
 
                         /usr/local/bin/kubectl rollout status \
                             deployment/nginx-lab \
@@ -70,7 +70,7 @@ pipeline {
                         "$APP_URL" \
                         -o nginx-response.html
 
-                    grep -q 'Welcome to nginx!' nginx-response.html
+                    grep -Fq 'Deployed by Jenkins to Kubernetes' nginx-response.html
                 '''
                 echo 'Deployment verificat prin HTTP.'
             }
