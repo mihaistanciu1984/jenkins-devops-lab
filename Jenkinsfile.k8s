@@ -17,6 +17,43 @@ pipeline {
             }
         }
 
+
+
+        stage('Build application image') {
+            steps {
+                sh '''
+                    set -eu
+                    docker build \
+                        -f Dockerfile.app \
+                        -t devops-web:${BUILD_NUMBER} \
+                        .
+                '''
+            }
+        }
+
+        stage('Test application image') {
+            steps {
+                sh '''
+                    set -eu
+
+                    docker image inspect \
+                        devops-web:${BUILD_NUMBER} > /dev/null
+
+                    docker run --rm --entrypoint cat \
+                        devops-web:${BUILD_NUMBER} \
+                        /usr/share/nginx/html/index.html \
+                        > image-index.html
+
+                    grep -Fq \
+                        'Deployed by Jenkins to Kubernetes' \
+                        image-index.html
+                '''
+                echo 'Imaginea proprie contine pagina HTML asteptata.'
+            }
+        }
+
+
+
         stage('Validate manifests') {
             steps {
                 withCredentials([
